@@ -8,9 +8,7 @@
     "app/api/auth/[...nextauth]/route.ts": {
       "maxDuration": 30
     }
-  },
   
-  },
   "build": {
     "env": {
       "DATABASE_URL": "postgresql://mock:mock@localhost:5432/mock?schema=public"
