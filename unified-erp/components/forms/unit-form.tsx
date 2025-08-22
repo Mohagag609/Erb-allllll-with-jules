@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createUnit } from "@/services/real-estate/units";
@@ -78,17 +78,23 @@ export function UnitForm({ onFormSubmit }: { onFormSubmit: () => void }) {
 
       <div className="col-span-2 sm:col-span-1">
         <Label htmlFor="status">الحالة</Label>
-        <Select onValueChange={(value) => control._updateFormState({ ...control._formValues, status: value as UnitStatus })} defaultValue={UnitStatus.available}>
-            <SelectTrigger id="status">
+        <Controller
+          name="status"
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <SelectTrigger id="status">
                 <SelectValue placeholder="اختر الحالة" />
-            </SelectTrigger>
-            <SelectContent>
+              </SelectTrigger>
+              <SelectContent>
                 <SelectItem value={UnitStatus.available}>متاحة</SelectItem>
                 <SelectItem value={UnitStatus.sold}>مباعة</SelectItem>
                 <SelectItem value={UnitStatus.returned}>مرتجعة</SelectItem>
-            </SelectContent>
-        </Select>
-        <input type="hidden" {...register("status")} />
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status.message}</p>}
       </div>
 
       <div className="col-span-2">
