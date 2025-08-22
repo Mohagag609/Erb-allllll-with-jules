@@ -66,7 +66,7 @@ export async function postInvoice(invoiceId: string) {
     }
 
     try {
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             await tx.invoice.update({
                 where: { id: invoiceId },
                 data: { status: InvoiceStatus.posted },

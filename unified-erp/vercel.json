@@ -14,5 +14,10 @@
     "NEXTAUTH_SECRET": "@nextauth_secret",
     "DATABASE_URL": "@database_url",
     "AUTH_TRUST_HOST": "true"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "postgresql://mock:mock@localhost:5432/mock?schema=public"
+    }
   }
 }

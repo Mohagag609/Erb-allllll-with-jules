@@ -63,7 +63,7 @@ export async function createContract(formData: FormData) {
   const installmentAmount = (totalAmount - downPayment) / months;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const contract = await tx.contract.create({
         data: {
           clientId,

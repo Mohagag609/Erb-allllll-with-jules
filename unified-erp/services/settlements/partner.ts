@@ -16,7 +16,7 @@ async function getAccountBalance(accountId: string, tx: any): Promise<Decimal> {
 }
 
 export async function runPartnerSettlement(projectId: string) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: any) => {
         const projectPartners = await tx.projectPartner.findMany({
             where: { projectId },
         });
@@ -25,7 +25,7 @@ export async function runPartnerSettlement(projectId: string) {
             throw new Error("يجب وجود شريكين على الأقل لتنفيذ التسوية.");
         }
 
-        const partnerData = await Promise.all(projectPartners.map(async (p) => {
+        const partnerData = await Promise.all(projectPartners.map(async (p: any) => {
             const balance = await getAccountBalance(p.walletAccountId, tx);
             return { ...p, balance };
         }));
@@ -74,7 +74,7 @@ export async function runPartnerSettlement(projectId: string) {
 
         // After settlement, every partner's effective balance is the average.
         // We update the previousCarry to this new baseline for the next period.
-        await Promise.all(projectPartners.map(p =>
+        await Promise.all(projectPartners.map((p: any) =>
             tx.projectPartner.update({
                 where: { id: p.id },
                 data: { previousCarry: averageContribution },

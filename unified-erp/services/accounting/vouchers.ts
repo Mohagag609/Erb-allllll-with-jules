@@ -57,7 +57,7 @@ export async function createVoucher(input: z.infer<typeof VoucherSchema>) {
 
   try {
     // We wrap the journal entry creation and voucher creation in a transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Create the journal entry first
       const journalEntry = await createJournalEntry(journalInput);
 

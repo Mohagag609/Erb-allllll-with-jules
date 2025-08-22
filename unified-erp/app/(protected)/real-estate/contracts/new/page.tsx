@@ -42,7 +42,7 @@ export default function NewContractPage() {
           getUnits()
         ]);
         setClients(allClients);
-        setAvailableUnits(allUnits.filter(u => u.status === UnitStatus.available));
+        setAvailableUnits(allUnits.filter((u: any) => u.status === UnitStatus.available));
       } catch (error) {
         console.error("Failed to fetch data:", error);
         // In a real app, show a toast notification
