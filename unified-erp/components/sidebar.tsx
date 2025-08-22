@@ -2,12 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Building, Users, FileText, Briefcase, BarChart2, Settings, Landmark, Truck, Construction } from "lucide-react";
+import { Home, Building, Users, FileText, Briefcase, BarChart2, Settings, Landmark, Truck, Construction, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { href: "/dashboard", label: "لوحة التحكم", icon: Home },
+interface NavLink {
+  type: 'link';
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+interface NavSection {
+  type: 'section';
+  title: string;
+  links: Omit<NavLink, 'type'>[];
+}
+
+type NavItem = NavLink | NavSection;
+
+
+const navLinks: NavItem[] = [
+  { type: 'link', href: "/dashboard", label: "لوحة التحكم", icon: Home },
   {
+    type: 'section',
     title: "العقارات",
     links: [
       { href: "/real-estate/projects", label: "المشاريع العقارية", icon: Building },
@@ -20,6 +37,7 @@ const navLinks = [
     ],
   },
   {
+    type: 'section',
     title: "المحاسبة",
     links: [
         { href: "/accounting/journal", label: "قيود اليومية", icon: FileText },
@@ -31,6 +49,7 @@ const navLinks = [
     ]
   },
   {
+    type: 'section',
     title: "المشاريع والمقاولات",
     links: [
         { href: "/projects/projects", label: "المشاريع", icon: Construction },
@@ -39,8 +58,8 @@ const navLinks = [
         { href: "/projects/material-moves", label: "حركة المواد", icon: Truck },
     ]
   },
-  { href: "/reports", label: "التقارير", icon: BarChart2 },
-  { href: "/settings", label: "الإعدادات", icon: Settings },
+  { type: 'link', href: "/reports", label: "التقارير", icon: BarChart2 },
+  { type: 'link', href: "/settings", label: "الإعدادات", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -54,7 +73,7 @@ export function Sidebar() {
       <nav className="space-y-4">
         {navLinks.map((item, index) => (
           <div key={index}>
-            {item.title ? (
+            {item.type === 'section' ? (
               <>
                 <h3 className="px-4 mt-4 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   {item.title}

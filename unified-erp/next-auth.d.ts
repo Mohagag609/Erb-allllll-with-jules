@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { type DefaultSession } from "next-auth";
+import { AdapterUser } from "next-auth/adapters";
 
 declare module "next-auth" {
   /**
@@ -14,6 +15,16 @@ declare module "next-auth" {
 
   interface User {
      /** The user's role. */
+    role: Role;
+  }
+}
+
+declare module "next-auth/adapters" {
+  /**
+   * The user object that the adapter works with.
+   * This extends the base AdapterUser to include the custom `role` field.
+   */
+  interface AdapterUser extends User {
     role: Role;
   }
 }
