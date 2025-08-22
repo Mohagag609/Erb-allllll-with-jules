@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { PlanType, UnitStatus } from "@prisma/client";
+import { PlanType, UnitStatus, InstallmentStatus } from "@prisma/client";
 import dayjs from "dayjs";
 
 const ContractSchema = z.object({
@@ -93,7 +93,7 @@ export async function createContract(formData: FormData) {
           contractId: contract.id,
           amount: installmentAmount,
           dueDate: dueDate,
-          status: "PENDING",
+          status: InstallmentStatus.PENDING,
         });
       }
 
