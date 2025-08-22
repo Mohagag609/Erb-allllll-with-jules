@@ -52,7 +52,7 @@ export default function ReportsPage() {
         fileName = `Installments_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
         mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-        const blob = new Blob([buffer], { type: mimeType });
+        const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = fileName;
