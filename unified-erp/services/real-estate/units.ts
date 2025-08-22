@@ -3,15 +3,15 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { UnitStatus } from "@prisma/client";
 
-// Schema for creating/updating a unit
+// Schema for creating/updating a unit aligned with Prisma schema
 const UnitSchema = z.object({
-  number: z.string().min(1, "رقم الوحدة مطلوب"),
+  code: z.string().min(1, "الكود مطلوب"),
   type: z.string().min(1, "نوع الوحدة مطلوب"),
-  area: z.number().min(1, "المساحة مطلوبة"),
-  price: z.number().min(0, "السعر يجب أن يكون موجب"),
-  status: z.enum(["available", "sold", "reserved"]),
-  location: z.string().optional(),
+  area: z.coerce.number().min(0).optional(),
+  price: z.coerce.number().min(0, "السعر يجب أن يكون موجب"),
+  status: z.nativeEnum(UnitStatus),
   description: z.string().optional(),
 });
 
@@ -32,8 +32,6 @@ export async function getUnits() {
 export async function createUnit(formData: FormData) {
   const validatedFields = UnitSchema.safeParse({
     ...Object.fromEntries(formData.entries()),
-    area: Number(formData.get("area")),
-    price: Number(formData.get("price")),
   });
 
   if (!validatedFields.success) {
@@ -54,12 +52,12 @@ export async function createUnit(formData: FormData) {
 
 // Function for creating sample units (accepts object instead of FormData)
 export async function createSampleUnit(unitData: {
-  number: string;
+  code: string;
   type: string;
-  area: number;
+  area?: number;
   price: number;
-  status: "available" | "sold" | "reserved";
-  location: string;
+  status: UnitStatus;
+  description?: string;
 }) {
   const validatedFields = UnitSchema.safeParse(unitData);
 
