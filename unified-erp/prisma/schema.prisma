@@ -1,0 +1,536 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- Enums ---
+
+enum Role {
+  ADMIN
+  MANAGER
+  ACCOUNTANT
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum PlanType {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum TxType {
+  DEBIT
+  CREDIT
+}
+
+enum UnitStatus {
+  available
+  sold
+  returned
+}
+
+enum InvoiceType {
+  customer
+  supplier
+  contractor
+}
+
+enum InvoiceStatus {
+  draft
+  posted
+  paid
+  partial
+}
+
+enum MaterialMoveType {
+  in
+  out
+  adjust
+}
+
+enum BackupLocation {
+  onedrive
+  gdrive
+  local
+}
+
+enum BackupStatus {
+  ok
+  failed
+}
+
+enum AccountType {
+  asset
+  liability
+  equity
+  revenue
+  expense
+}
+
+// --- Auth (NextAuth.js v5) ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  role          Role      @default(ACCOUNTANT)
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  auditLogs     AuditLog[] @relation("AuditLogActor")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+
+// --- Parties ---
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contracts Contract[]
+  vouchers  Voucher[]
+  invoices  Invoice[]
+  journalLines JournalLine[]
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  taxId     String?
+  note      String?
+  vouchers  Voucher[]
+  invoices  Invoice[]
+  journalLines JournalLine[]
+}
+
+model Contractor {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  taxId     String?
+  note      String?
+  vouchers  Voucher[]
+  invoices  Invoice[]
+  journalLines JournalLine[]
+}
+
+model Partner {
+  id              String           @id @default(cuid())
+  name            String
+  phone           String?
+  note            String?
+  projectPartners ProjectPartner[]
+  vouchers        Voucher[]
+  journalLines    JournalLine[]
+}
+
+
+// --- Real Estate ---
+
+model Project {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  status          String           @default("active") // active | paused | closed
+  startDate       DateTime
+  endDate         DateTime?
+  budget          Decimal?         @db.Decimal(18, 2)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  units           Unit[]
+  projectPartners ProjectPartner[]
+  cashboxes       Cashbox[]
+  journalEntries  JournalEntry[]
+  invoices        Invoice[]
+  phases          Phase[]
+  materialMoves   MaterialMove[]
+  vouchers        Voucher[]
+}
+
+model Unit {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  projectId       String?
+  type            String // e.g., سكني, تجاري
+  area            Decimal?  @db.Decimal(10, 2)
+  price           Decimal   @db.Decimal(18, 2)
+  downPayment     Decimal?  @db.Decimal(18, 2)
+  reservationFees Decimal?  @db.Decimal(18, 2)
+  commission      Decimal?  @db.Decimal(18, 2)
+  maintenance     Decimal?  @db.Decimal(18, 2)
+  garageShare     Decimal?  @db.Decimal(18, 2)
+  status          UnitStatus @default(available)
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  project         Project?  @relation(fields: [projectId], references: [id])
+  contracts       Contract[]
+  returns         Return[]
+}
+
+model Contract {
+  id            String        @id @default(cuid())
+  clientId      String
+  unitId        String        @unique // A unit can only have one active contract
+  startDate     DateTime
+  totalAmount   Decimal       @db.Decimal(18, 2)
+  downPayment   Decimal       @db.Decimal(18, 2)
+  months        Int
+  planType      PlanType
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  client        Client        @relation(fields: [clientId], references: [id])
+  unit          Unit          @relation(fields: [unitId], references: [id])
+  installments  Installment[]
+}
+
+model Installment {
+  id                  String            @id @default(cuid())
+  contractId          String
+  amount              Decimal           @db.Decimal(18, 2)
+  dueDate             DateTime
+  status              InstallmentStatus @default(PENDING)
+  paidAt              DateTime?
+  matchedBankImportId String?           @unique
+  contract            Contract          @relation(fields: [contractId], references: [id])
+  matchedBankImport   BankImport?       @relation(fields: [matchedBankImportId], references: [id])
+}
+
+model Return {
+  id                  String    @id @default(cuid())
+  unitId              String
+  reason              String?
+  complementPartnerId String?
+  complementDate      DateTime?
+  complementAmount    Decimal?  @db.Decimal(18, 2)
+  resaleStatus        String    @default("pending") // pending | resold
+  createdAt           DateTime  @default(now())
+  unit                Unit      @relation(fields: [unitId], references: [id])
+}
+
+model ProjectPartner {
+  id              String   @id @default(cuid())
+  projectId       String
+  partnerId       String
+  sharePct        Decimal  @db.Decimal(5, 2)
+  walletAccountId String   @unique
+  previousCarry   Decimal  @default(0) @db.Decimal(18, 2)
+  project         Project  @relation(fields: [projectId], references: [id])
+  partner         Partner  @relation(fields: [partnerId], references: [id])
+  walletAccount   AccountGL  @relation(fields: [walletAccountId], references: [id])
+
+  @@unique([projectId, partnerId])
+  @@index([projectId, partnerId])
+}
+
+
+// --- Accounting ---
+
+model AccountGL {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  name          String
+  type          AccountType
+  parentAccountId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  parentAccount   AccountGL?  @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
+  childAccounts   AccountGL[] @relation("AccountHierarchy")
+  journalLines    JournalLine[]
+  cashboxes       Cashbox[]
+  projectPartners ProjectPartner[]
+  invoiceLines    InvoiceLine[]
+
+  @@map("accounts")
+}
+
+model Cashbox {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  projectId String?
+  accountId String   @unique
+  branch    String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  account   AccountGL  @relation(fields: [accountId], references: [id])
+  vouchers  Voucher[]
+  transfersFrom Transfer[] @relation("FromCashbox")
+  transfersTo   Transfer[] @relation("ToCashbox")
+  journalLines JournalLine[]
+
+  @@index([projectId])
+}
+
+model JournalEntry {
+  id              String        @id @default(cuid())
+  date            DateTime
+  ref             String?
+  description     String?
+  projectId       String?
+  posted          Boolean       @default(false)
+  reversedEntryId String?       @unique
+  createdBy       String // UserId
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  project         Project?      @relation(fields: [projectId], references: [id])
+  reversedEntry   JournalEntry? @relation("Reversal", fields: [reversedEntryId], references: [id])
+  reverses        JournalEntry? @relation("Reversal")
+  lines           JournalLine[]
+
+  @@index([date, projectId])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id           String      @id @default(cuid())
+  entryId      String
+  accountId    String
+  debit        Decimal     @default(0) @db.Decimal(18, 2)
+  credit       Decimal     @default(0) @db.Decimal(18, 2)
+  projectId    String?
+  cashboxId    String?
+  clientId     String?
+  supplierId   String?
+  contractorId String?
+  partnerId    String?
+  invoiceId    String?
+  phaseId      String?
+  materialId   String?
+
+  entry        JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account      AccountGL      @relation(fields: [accountId], references: [id])
+  project      Project?     @relation(fields: [projectId], references: [id])
+  cashbox      Cashbox?     @relation(fields: [cashboxId], references: [id])
+  client       Client?      @relation(fields: [clientId], references: [id])
+  supplier     Supplier?    @relation(fields: [supplierId], references: [id])
+  contractor   Contractor?  @relation(fields: [contractorId], references: [id])
+  partner      Partner?     @relation(fields: [partnerId], references: [id])
+  invoice      Invoice?     @relation(fields: [invoiceId], references: [id])
+  phase        Phase?       @relation(fields: [phaseId], references: [id])
+  material     Material?    @relation(fields: [materialId], references: [id])
+
+  // Prisma does not support CHECK constraints directly.
+  // These should be added via a raw SQL migration.
+  // CHECK (NOT (debit > 0 AND credit > 0))
+  // CHECK (debit >= 0 AND credit >= 0)
+  @@index([entryId, accountId])
+  @@map("journal_lines")
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  projectId    String?
+  type         InvoiceType
+  number       String        @unique
+  date         DateTime
+  dueDate      DateTime?
+  total        Decimal       @db.Decimal(18, 2)
+  status       InvoiceStatus @default(draft)
+  clientId     String?
+  supplierId   String?
+  contractorId String?
+  note         String?
+
+  project      Project?      @relation(fields: [projectId], references: [id])
+  client       Client?       @relation(fields: [clientId], references: [id])
+  supplier     Supplier?     @relation(fields: [supplierId], references: [id])
+  contractor   Contractor?   @relation(fields: [contractorId], references: [id])
+  lines        InvoiceLine[]
+  journalLines JournalLine[]
+
+  @@index([projectId, type, date, status])
+}
+
+model InvoiceLine {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  materialId  String?
+  qty         Decimal  @db.Decimal(18, 3)
+  unitPrice   Decimal  @db.Decimal(18, 2)
+  accountId   String
+
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  material Material? @relation(fields: [materialId], references: [id])
+  account  AccountGL  @relation(fields: [accountId], references: [id])
+}
+
+model Voucher {
+  id           String   @id @default(cuid())
+  kind         String // receipt | payment
+  date         DateTime
+  cashboxId    String
+  projectId    String?
+  amount       Decimal  @db.Decimal(18, 2)
+  clientId     String?
+  supplierId   String?
+  contractorId String?
+  partnerId    String?
+  note         String?
+
+  cashbox    Cashbox    @relation(fields: [cashboxId], references: [id])
+  project    Project?   @relation(fields: [projectId], references: [id])
+  client     Client?    @relation(fields: [clientId], references: [id])
+  supplier   Supplier?  @relation(fields: [supplierId], references: [id])
+  contractor Contractor?@relation(fields: [contractorId], references: [id])
+  partner    Partner?   @relation(fields: [partnerId], references: [id])
+}
+
+model Transfer {
+  id            String   @id @default(cuid())
+  fromCashboxId String
+  toCashboxId   String
+  date          DateTime
+  amount        Decimal  @db.Decimal(18, 2)
+  note          String?
+
+  fromCashbox Cashbox @relation("FromCashbox", fields: [fromCashboxId], references: [id])
+  toCashbox   Cashbox @relation("ToCashbox", fields: [toCashboxId], references: [id])
+}
+
+model BankImport {
+  id                   String       @id @default(cuid())
+  date                 DateTime
+  amount               Decimal      @db.Decimal(18, 2)
+  type                 String // "debit" | "credit"
+  reference            String?
+  bankName             String?
+  description          String?
+  posted               Boolean      @default(false)
+  matchedInstallmentId String?      @unique
+  installment          Installment?
+}
+
+
+// --- Projects Materials & Phases ---
+
+model Phase {
+  id          String         @id @default(cuid())
+  projectId   String
+  name        String
+  startDate   DateTime?
+  endDate     DateTime?
+  progressPct Decimal?       @db.Decimal(5, 2)
+  project     Project        @relation(fields: [projectId], references: [id])
+  materialMoves MaterialMove[]
+  journalLines  JournalLine[]
+}
+
+model Material {
+  id              String          @id @default(cuid())
+  name            String
+  unit            String
+  defaultUnitCost Decimal?        @db.Decimal(18, 2)
+  materialMoves   MaterialMove[]
+  invoiceLines    InvoiceLine[]
+  journalLines    JournalLine[]
+}
+
+model MaterialMove {
+  id         String           @id @default(cuid())
+  projectId  String
+  materialId String
+  type       MaterialMoveType
+  qty        Decimal          @db.Decimal(18, 3)
+  unitCost   Decimal          @db.Decimal(18, 2)
+  date       DateTime
+  phaseId    String?
+  note       String?
+
+  project  Project  @relation(fields: [projectId], references: [id])
+  material Material @relation(fields: [materialId], references: [id])
+  phase    Phase?   @relation(fields: [phaseId], references: [id])
+
+  @@index([projectId, materialId, date])
+  @@map("material_moves")
+}
+
+
+// --- Backups & Logs ---
+
+model Backup {
+  id            String         @id @default(cuid())
+  runAt         DateTime       @default(now())
+  location      BackupLocation
+  pathOrDriveId String
+  sizeBytes     BigInt?
+  status        BackupStatus
+  message       String?
+}
+
+model AuditLog {
+  id       String @id @default(cuid())
+  actorId  String
+  action   String // e.g., "CREATE_INVOICE", "POST_JOURNAL"
+  entity   String // e.g., "Invoice", "JournalEntry"
+  entityId String
+  meta     Json?
+  at       DateTime @default(now())
+
+  actor User @relation("AuditLogActor", fields: [actorId], references: [id])
+  @@index([actorId, entity, at])
+}
