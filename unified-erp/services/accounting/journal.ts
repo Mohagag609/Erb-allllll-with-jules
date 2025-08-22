@@ -45,7 +45,7 @@ export async function createJournalEntry(input: CreateJournalEntryInput) {
   }
 
   try {
-    const newEntry = await prisma.$transaction(async (tx) => {
+    const newEntry = await prisma.$transaction(async (tx: any) => {
       const journalEntry = await tx.journalEntry.create({
         data: {
           date: date,

@@ -63,7 +63,7 @@ export async function createContract(formData: FormData) {
   const installmentAmount = (totalAmount - downPayment) / months;
 
   try {
-    await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const contract = await tx.contract.create({
         data: {
           clientId,
@@ -107,10 +107,13 @@ export async function createContract(formData: FormData) {
         where: { id: unitId },
         data: { status: UnitStatus.sold },
       });
+
+      return contract;
     });
 
     revalidatePath("/real-estate/contracts");
     revalidatePath("/real-estate/units");
+    return result;
   } catch (error) {
     console.error("Failed to create contract:", error);
     throw new Error("فشل في إنشاء العقد والأقساط.");

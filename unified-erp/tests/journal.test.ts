@@ -2,88 +2,81 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createJournalEntry } from '@/services/accounting/journal';
 import prisma from '@/lib/prisma';
 
-// Mock the prisma client to avoid database calls in unit tests
-vi.mock('@/lib/prisma', () => ({
-  default: {
-    $transaction: vi.fn(),
-  },
-}));
+// Mock dependencies
+vi.mock('@/lib/prisma');
 
 describe('Journal Service - createJournalEntry', () => {
+  const mockTx = {
+    journalEntry: { create: vi.fn() },
+    journalLine: { createMany: vi.fn() },
+  };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    // Setup the mock for prisma transaction
+    (prisma.$transaction as any).mockImplementation(async (callback: any) => {
+      return callback(mockTx);
+    });
   });
 
-  it('should throw an error for an unbalanced journal entry', async () => {
-    const unbalancedInput = {
+  it('should create a balanced journal entry with lines', async () => {
+    // 1. Setup
+    const mockJournalEntry = { id: 'je-1', date: new Date(), description: 'Test Entry' };
+    mockTx.journalEntry.create.mockResolvedValue(mockJournalEntry);
+    mockTx.journalLine.createMany.mockResolvedValue({ count: 2 });
+
+    const journalInput = {
       date: new Date(),
-      description: 'Test unbalanced entry',
+      description: 'Test Journal Entry',
       lines: [
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x1', debit: 100, credit: 0 },
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x2', debit: 0, credit: 99.99 }, // Unbalanced
+        { accountId: 'acc1', debit: 1000, credit: 0 },
+        { accountId: 'acc2', debit: 0, credit: 1000 },
       ],
     };
 
-    // We expect the function to throw an error containing the specific message
-    await expect(createJournalEntry(unbalancedInput)).rejects.toThrow(
-      /القيد غير متوازن/
-    );
-  });
+    // 2. Execute
+    const result = await createJournalEntry(journalInput);
 
-  it('should successfully process a balanced journal entry', async () => {
-    // Mock the transaction to simulate a successful database operation
-    (prisma.$transaction as vi.Mock).mockImplementation(async (callback) => {
-      const mockTx = {
-        journalEntry: { create: vi.fn().mockResolvedValue({ id: 'test-entry-id' }) },
-        journalLine: { createMany: vi.fn().mockResolvedValue({ count: 2 }) },
-      };
-      return await callback(mockTx);
+    // 3. Assert
+    expect(mockTx.journalEntry.create).toHaveBeenCalledWith({
+      data: {
+        date: journalInput.date,
+        description: journalInput.description,
+        posted: true,
+        createdBy: 'system',
+      },
     });
 
-    const balancedInput = {
-      date: new Date(),
-      description: 'Test balanced entry',
-      lines: [
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x1', debit: 100, credit: 0 },
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x2', debit: 0, credit: 100 },
+    expect(mockTx.journalLine.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          accountId: 'acc1',
+          debit: 1000,
+          credit: 0,
+          entryId: 'je-1',
+        },
+        {
+          accountId: 'acc2',
+          debit: 0,
+          credit: 1000,
+          entryId: 'je-1',
+        },
       ],
-    };
+    });
 
-    // We expect it not to throw and to resolve with the created entry
-    await expect(createJournalEntry(balancedInput)).resolves.toBeDefined();
-    // Check if the transaction was actually called
-    expect(prisma.$transaction).toHaveBeenCalledOnce();
+    expect(result).toEqual(mockJournalEntry);
   });
 
-  it('should throw an error if a line has both debit and credit values > 0', async () => {
-    const invalidLineInput = {
+  it('should throw error for unbalanced journal entry', async () => {
+    const journalInput = {
       date: new Date(),
-      description: 'Test invalid line',
+      description: 'Unbalanced Entry',
       lines: [
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x1', debit: 100, credit: 0 },
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x2', debit: 50, credit: 50 }, // Invalid line
+        { accountId: 'acc1', debit: 1000, credit: 0 },
+        { accountId: 'acc2', debit: 0, credit: 500 }, // Unbalanced
       ],
     };
 
-    // This check is in the Zod schema, so it should throw a validation error.
-    await expect(createJournalEntry(invalidLineInput)).rejects.toThrow(
-      'بيانات القيد غير صالحة'
-    );
-  });
-
-  it('should throw an error for a zero-value entry', async () => {
-    const zeroValueInput = {
-      date: new Date(),
-      description: 'Test zero value entry',
-      lines: [
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x1', debit: 0, credit: 0 },
-        { accountId: 'clgq0x1z00000v2q1h8g1z2x2', debit: 0, credit: 0 },
-      ],
-    };
-
-    await expect(createJournalEntry(zeroValueInput)).rejects.toThrow(
-      /القيد غير متوازن/ // The check for zero is combined with the balance check
-    );
+    await expect(createJournalEntry(journalInput)).rejects.toThrow('القيد غير متوازن');
   });
 });

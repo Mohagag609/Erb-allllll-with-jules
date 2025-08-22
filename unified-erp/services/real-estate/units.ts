@@ -47,12 +47,13 @@ export async function createUnit(formData: FormData) {
 
   try {
     const data = validatedFields.data;
-    await prisma.unit.create({
+    const unit = await prisma.unit.create({
       data: {
         ...data,
       },
     });
     revalidatePath("/real-estate/units");
+    return unit;
   } catch (error) {
     console.error("Failed to create unit:", error);
     throw new Error("فشل في إنشاء الوحدة.");

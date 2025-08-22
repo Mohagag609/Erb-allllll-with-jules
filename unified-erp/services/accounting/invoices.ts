@@ -20,15 +20,20 @@ const InvoiceSchema = z.object({
 });
 
 export async function createDraftInvoice(input: z.infer<typeof InvoiceSchema>) {
-    const invoice = await prisma.invoice.create({
-        data: {
-            ...input,
-            total: new Decimal(input.total),
-            status: InvoiceStatus.draft,
-        }
-    });
-    revalidatePath("/accounting/invoices");
-    return invoice;
+    try {
+        const invoice = await prisma.invoice.create({
+            data: {
+                ...input,
+                total: new Decimal(input.total),
+                status: InvoiceStatus.draft,
+            }
+        });
+        revalidatePath("/accounting/invoices");
+        return invoice;
+    } catch (error) {
+        console.error("Failed to create draft invoice:", error);
+        throw new Error("فشل في إنشاء الفاتورة.");
+    }
 }
 
 export async function postInvoice(invoiceId: string) {
@@ -61,7 +66,7 @@ export async function postInvoice(invoiceId: string) {
     }
 
     try {
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             await tx.invoice.update({
                 where: { id: invoiceId },
                 data: { status: InvoiceStatus.posted },

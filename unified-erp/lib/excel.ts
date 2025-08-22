@@ -37,7 +37,6 @@ export async function generateExcel(columns: any[], data: any[], sheetName: stri
     };
   });
 
-
   // Add data rows
   worksheet.addRows(data);
 
@@ -58,14 +57,16 @@ export async function generateExcel(columns: any[], data: any[], sheetName: stri
 
   // Adjust column widths
   worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell!({ includeEmpty: true }, (cell) => {
-      let columnLength = cell.value ? cell.value.toString().length : 10;
-      if (columnLength > maxLength) {
-        maxLength = columnLength;
-      }
-    });
-    column.width = maxLength < 12 ? 12 : maxLength + 2;
+    if (column.eachCell) {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        let columnLength = cell.value ? cell.value.toString().length : 10;
+        if (columnLength > maxLength) {
+          maxLength = columnLength;
+        }
+      });
+      column.width = maxLength < 12 ? 12 : maxLength + 2;
+    }
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
@@ -89,20 +90,8 @@ export function prepareInstallmentsReportExcel(data: any[]) {
         contractId: inst.contractId,
         dueDate: new Date(inst.dueDate).toLocaleDateString('ar-EG'),
         status: inst.status, // Assuming status is in Arabic or needs mapping
-        amount: {
-            // Formula to display as number with formatting
-            result: inst.amount,
-            formula: undefined,
-        },
+        amount: inst.amount,
     }));
-
-    // Apply number format to the amount column
-    const amountCol = 'D'; // Assuming Amount is the 4th column
-    rows.forEach((row, index) => {
-        const cell = `D${index + 2}`;
-        // This is a placeholder as direct number formatting is part of styling
-    });
-
 
     return { columns, rows };
 }

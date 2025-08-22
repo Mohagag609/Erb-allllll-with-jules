@@ -17,9 +17,9 @@ describe('Invoice Service - postInvoice', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     // Setup the mock for prisma transaction
-    (prisma.$transaction as vi.Mock).mockImplementation(async (callback) => callback(mockTx));
+    (prisma.$transaction as any).mockImplementation(async (callback: any) => callback(mockTx));
     // Mock prisma's findUnique used outside the transaction
-    (prisma.invoice.findUnique as vi.Mock) = vi.fn();
+    (prisma.invoice.findUnique as any) = vi.fn();
   });
 
   it('should post a draft invoice, update its status, and create a balanced journal entry', async () => {
@@ -33,7 +33,7 @@ describe('Invoice Service - postInvoice', () => {
       total: new Decimal(5000),
       clientId: 'client1',
     };
-    (prisma.invoice.findUnique as vi.Mock).mockResolvedValue(draftInvoice);
+    (prisma.invoice.findUnique as any).mockResolvedValue(draftInvoice);
 
     const createJournalEntrySpy = vi.spyOn(journalService, 'createJournalEntry');
     createJournalEntrySpy.mockResolvedValue({ id: 'je-id',} as any);
@@ -55,8 +55,8 @@ describe('Invoice Service - postInvoice', () => {
     expect(journalCall.description).toContain('ترحيل فاتورة');
     expect(journalCall.lines).toHaveLength(2);
 
-    const debitLine = journalCall.lines.find(l => l.debit > 0);
-    const creditLine = journalCall.lines.find(l => l.credit > 0);
+    const debitLine = journalCall.lines.find((l: any) => l.debit > 0);
+    const creditLine = journalCall.lines.find((l: any) => l.credit > 0);
 
     // For a customer invoice: Dr: AR (1130), Cr: Revenue (4100)
     expect(debitLine?.accountId).toBe("1130");
@@ -71,7 +71,7 @@ describe('Invoice Service - postInvoice', () => {
       status: InvoiceStatus.posted,
       // ...other fields
     };
-    (prisma.invoice.findUnique as vi.Mock).mockResolvedValue(postedInvoice);
+    (prisma.invoice.findUnique as any).mockResolvedValue(postedInvoice);
 
     await expect(postInvoice('inv2')).rejects.toThrow(
       "يمكن فقط ترحيل الفواتير في حالة 'مسودة'."
