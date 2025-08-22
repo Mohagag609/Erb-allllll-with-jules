@@ -18,10 +18,18 @@ import { Unit } from "@prisma/client";
 export default function UnitsPage() {
   const [data, setData] = useState<Unit[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
-    const units = await getUnits();
-    setData(units);
+    try {
+      const units = await getUnits();
+      setData(units);
+    } catch (error) {
+      console.error("Failed to fetch units:", error);
+      // In a real app, show a toast notification
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -32,6 +40,10 @@ export default function UnitsPage() {
     fetchData(); // Refetch data after submission
     setDialogOpen(false);
   };
+
+  if (isLoading) {
+    return <div className="container mx-auto py-10">جاري التحميل...</div>;
+  }
 
   return (
     <div className="container mx-auto py-10">

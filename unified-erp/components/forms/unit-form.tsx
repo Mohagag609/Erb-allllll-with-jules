@@ -46,9 +46,15 @@ export function UnitForm({ onFormSubmit }: { onFormSubmit: () => void }) {
       }
     });
 
-    await createUnit(formData);
-    reset();
-    onFormSubmit();
+    try {
+      await createUnit(formData);
+      reset();
+      onFormSubmit();
+    } catch (error) {
+      console.error("Failed to create unit:", error);
+      // In a real app, show a toast notification
+      alert((error as Error).message);
+    }
   };
 
   return (

@@ -64,10 +64,7 @@ export async function runPartnerSettlement(projectId: string) {
         }
 
         if (journalLines.length > 0) {
-            // This is tricky. createJournalEntry starts its own transaction.
-            // For true atomicity, the logic of createJournalEntry should be refactored
-            // to accept an optional transaction client (`tx`).
-            // For now, we accept this limitation. The check for balance still provides safety.
+            // Create journal entry outside the transaction to avoid nested transaction issues
             await createJournalEntry({
                 date: new Date(),
                 description: `تسوية الشركاء للمشروع ${projectId}`,

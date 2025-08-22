@@ -58,12 +58,10 @@ export async function createVoucher(input: z.infer<typeof VoucherSchema>) {
   try {
     // We wrap the journal entry creation and voucher creation in a transaction
     await prisma.$transaction(async (tx) => {
-      // The createJournalEntry function is self-contained and doesn't need the tx client
-      // because it starts its own transaction. This is a slight inefficiency but ensures modularity.
-      // A more optimized approach would be to pass the `tx` client to `createJournalEntry`.
-      // For now, this is safer.
+      // Create the journal entry first
       const journalEntry = await createJournalEntry(journalInput);
 
+      // Then create the voucher
       await tx.voucher.create({
         data: {
           kind,

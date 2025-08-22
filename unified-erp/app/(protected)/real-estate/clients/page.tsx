@@ -18,20 +18,37 @@ import { Client } from "@prisma/client";
 export default function ClientsPage() {
   const [data, setData] = useState<Client[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const clients = await getClients();
-      setData(clients);
+      try {
+        const clients = await getClients();
+        setData(clients);
+      } catch (error) {
+        console.error("Failed to fetch clients:", error);
+        // In a real app, show a toast notification
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchData();
   }, []);
 
   const handleFormSubmit = async () => {
-    const clients = await getClients();
-    setData(clients);
-    setDialogOpen(false);
+    try {
+      const clients = await getClients();
+      setData(clients);
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to refresh clients:", error);
+      // In a real app, show a toast notification
+    }
   };
+
+  if (isLoading) {
+    return <div className="container mx-auto py-10">جاري التحميل...</div>;
+  }
 
   return (
     <div className="container mx-auto py-10">

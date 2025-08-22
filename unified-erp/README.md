@@ -1,103 +1,201 @@
-# Unified Real Estate & Treasury ERP
+# Unified ERP - نظام إدارة الموارد المؤسسية الموحد
 
-This is a comprehensive, production-ready ERP system built with a modern tech stack, focusing on the real estate and treasury management domains. It features a clean, extensible, and well-tested codebase.
+نظام إدارة شامل للعقارات والخزينة مبني على Next.js 14 مع TypeScript.
 
-## Features
+## المميزات
 
-- **Core Modules**: Real Estate, Treasury, Accounting, Projects
-- **Tech Stack**: Next.js 14 (App Router), TypeScript, TailwindCSS, shadcn/ui
-- **Database**: Prisma ORM with PostgreSQL
-- **Authentication**: NextAuth.js v5 with Role-Based Access Control (RBAC)
-- **Reporting**: PDF and Excel report generation
-- **Key Principles**: Double-Entry Accounting, Document Reversal, Audit Logs
+### 🏢 إدارة العقارات
+- إدارة المشاريع العقارية
+- إدارة الوحدات (متاحة، مباعة، مرتجعة)
+- إدارة العملاء والشركاء
+- إدارة العقود والأقساط
+- إدارة المرتجعات
 
-## Quick Start Guide
+### 💰 إدارة المحاسبة
+- قيود اليومية
+- إدارة الخزن والبنوك
+- سندات القبض والصرف
+- إدارة الفواتير
+- تحويلات الخزن
+- كشوفات البنك
 
-Follow these steps to get the project up and running on your local machine.
+### 🏗️ إدارة المشاريع والمقاولات
+- إدارة المشاريع
+- إدارة المراحل
+- إدارة المواد
+- حركة المواد
 
-### 1. Prerequisites
+### 📊 التقارير
+- تقارير الأقساط
+- تصدير PDF و Excel
+- تقارير مالية شاملة
 
-- Node.js (v18 or later)
-- npm or pnpm or yarn
-- PostgreSQL database (e.g., via Docker or a cloud provider like Neon)
+### 🔐 الأمان
+- نظام مصادقة متقدم مع NextAuth.js
+- إدارة الأدوار والصلاحيات
+- حماية المسارات
 
-### 2. Installation
+## التقنيات المستخدمة
 
-Clone the repository and install the dependencies:
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Styling**: Tailwind CSS, Radix UI
+- **Database**: PostgreSQL مع Prisma ORM
+- **Authentication**: NextAuth.js v5
+- **Forms**: React Hook Form مع Zod validation
+- **Tables**: TanStack Table
+- **PDF**: PDFMake
+- **Excel**: ExcelJS
+- **Testing**: Vitest
 
+## متطلبات النظام
+
+- Node.js 18+ 
+- PostgreSQL 12+
+- npm أو yarn
+
+## التثبيت والإعداد
+
+### 1. استنساخ المشروع
 ```bash
 git clone <repository-url>
 cd unified-erp
+```
+
+### 2. تثبيت التبعيات
+```bash
 npm install
 ```
 
-### 3. Environment Setup
-
-Copy the example environment file and update it with your database credentials and a new `NEXTAUTH_SECRET`.
-
+### 3. إعداد متغيرات البيئة
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Open `.env` and fill in the following variables:
-- `DATABASE_URL`: Your PostgreSQL connection string.
-- `NEXTAUTH_SECRET`: A strong secret. You can generate one with `openssl rand -base64 32`.
+قم بتعديل ملف `.env.local` وإضافة:
+- `DATABASE_URL`: رابط قاعدة البيانات PostgreSQL
+- `NEXTAUTH_SECRET`: مفتاح سري قوي (يمكن إنشاؤه بـ `openssl rand -base64 32`)
+- `NEXTAUTH_URL`: رابط التطبيق
 
-### 4. Database Migration
-
-Apply the database schema and generate the Prisma Client:
-
+### 4. إعداد قاعدة البيانات
 ```bash
-npx prisma migrate dev --name init
-```
+# إنشاء جداول قاعدة البيانات
+npm run db:migrate
 
-This command will synchronize your database schema with `prisma/schema.prisma`.
-
-### 5. Seed Initial Data
-
-Populate the database with an admin user and a default chart of accounts:
-
-```bash
+# إنشاء بيانات تجريبية
 npm run seed
 ```
 
-### 6. Run the Application
+### 5. تشغيل التطبيق
+```bash
+# وضع التطوير
+npm run dev
 
-Start the development server:
+# أو بناء وتشغيل الإنتاج
+npm run build
+npm start
+```
+
+## هيكل المشروع
+
+```
+unified-erp/
+├── app/                    # Next.js App Router
+│   ├── (auth)/            # صفحات المصادقة
+│   ├── (protected)/       # الصفحات المحمية
+│   ├── api/               # API Routes
+│   └── globals.css        # الأنماط العامة
+├── components/            # مكونات React
+│   ├── ui/               # مكونات UI الأساسية
+│   ├── forms/            # نماذج الإدخال
+│   └── datatable/        # مكونات الجداول
+├── lib/                  # مكتبات مساعدة
+│   ├── auth.ts          # إعدادات المصادقة
+│   ├── prisma.ts        # إعداد Prisma
+│   ├── pdf.ts           # إنشاء PDF
+│   └── excel.ts         # إنشاء Excel
+├── prisma/              # إعدادات قاعدة البيانات
+│   ├── schema.prisma    # مخطط قاعدة البيانات
+│   └── seed.ts          # بيانات تجريبية
+├── services/            # خدمات الأعمال
+│   ├── accounting/      # خدمات المحاسبة
+│   ├── real-estate/     # خدمات العقارات
+│   └── reporting/       # خدمات التقارير
+└── tests/               # اختبارات الوحدة
+```
+
+## الأوامر المتاحة
 
 ```bash
-npm run dev
+# التطوير
+npm run dev              # تشغيل خادم التطوير
+npm run build            # بناء التطبيق للإنتاج
+npm run start            # تشغيل خادم الإنتاج
+
+# التحقق من الكود
+npm run lint             # فحص ESLint
+npm run typecheck        # فحص TypeScript
+npm run format           # تنسيق الكود
+
+# قاعدة البيانات
+npm run db:generate      # إنشاء Prisma Client
+npm run db:migrate       # تشغيل الهجرات
+npm run db:studio        # فتح Prisma Studio
+npm run seed             # إنشاء بيانات تجريبية
+
+# الاختبارات
+npm run test             # تشغيل الاختبارات
+
+# النسخ الاحتياطي
+npm run backup:run       # تشغيل النسخ الاحتياطي
 ```
 
-The application should now be running at [http://localhost:3000](http://localhost:3000).
+## بيانات تسجيل الدخول الافتراضية
 
-## Demo Credentials
+بعد تشغيل `npm run seed`، يمكنك تسجيل الدخول بـ:
+- **البريد الإلكتروني**: `admin@unified.erp`
+- **كلمة المرور**: `password123`
 
-After seeding the database, you can log in with the following credentials:
+## النشر على Vercel
 
-- **Email**: `admin@unified.erp`
-- **Password**: `password123`
+### 1. إعداد متغيرات البيئة في Vercel
+- `DATABASE_URL`: رابط قاعدة البيانات
+- `NEXTAUTH_SECRET`: مفتاح سري قوي
+- `NEXTAUTH_URL`: رابط التطبيق
+- `AUTH_TRUST_HOST`: `true`
 
-## Authentication
-
-Authentication is enabled by default. To disable it for development or testing purposes, set the following variable in your `.env` file:
-
+### 2. ربط المشروع بـ Vercel
+```bash
+npm install -g vercel
+vercel
 ```
-ENABLE_AUTH=false
+
+### 3. تشغيل الهجرات
+```bash
+vercel env pull .env.local
+npm run db:migrate
+npm run seed
 ```
 
-When `ENABLE_AUTH` is `false`, all protected routes will be accessible without logging in.
+## المساهمة
 
-## Available Scripts
+1. Fork المشروع
+2. إنشاء فرع للميزة الجديدة (`git checkout -b feature/AmazingFeature`)
+3. Commit التغييرات (`git commit -m 'Add some AmazingFeature'`)
+4. Push إلى الفرع (`git push origin feature/AmazingFeature`)
+5. فتح Pull Request
 
-- `dev`: Starts the development server.
-- `build`: Creates a production build.
-- `start`: Starts the production server.
-- `lint`: Lints the codebase.
-- `format`: Formats the code with Prettier.
-- `db:generate`: Generates the Prisma Client.
-- `db:migrate`: Applies database migrations.
-- `db:studio`: Opens Prisma Studio to view/edit data.
-- `seed`: Runs the database seeding script.
-- `test`: Runs tests with Vitest.
-- `backup:run`: Executes a manual database backup.
+## الترخيص
+
+هذا المشروع مرخص تحت رخصة MIT - انظر ملف [LICENSE](LICENSE) للتفاصيل.
+
+## الدعم
+
+إذا واجهت أي مشاكل أو لديك أسئلة، يرجى فتح issue في GitHub أو التواصل مع فريق التطوير.
+
+## التحديثات القادمة
+
+- [ ] نظام إشعارات متقدم
+- [ ] تطبيق موبايل
+- [ ] تكامل مع أنظمة خارجية
+- [ ] تحليلات متقدمة
+- [ ] نظام النسخ الاحتياطي السحابي

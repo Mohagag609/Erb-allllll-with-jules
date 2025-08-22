@@ -31,10 +31,15 @@ export default function ReportsPage() {
 
       if (format === 'pdf') {
         const docDefinition = createInstallmentsReportDocDefinition(installments);
-        // This is a workaround for server-side font loading. In a real app,
-        // you would need to load the font file into the vfs.
-        // For now, we rely on client-side generation which has the fonts.
-        const pdfDoc = require('pdfmake/build/pdfmake').createPdf(docDefinition);
+        
+        // Use dynamic import for pdfmake to avoid SSR issues
+        const pdfMake = await import('pdfmake/build/pdfmake');
+        const pdfFonts = await import('pdfmake/build/vfs_fonts');
+        
+        // Set up fonts
+        pdfMake.default.vfs = (pdfFonts as any).pdfMake.vfs;
+        
+        const pdfDoc = pdfMake.default.createPdf(docDefinition);
 
         const blob = await new Promise<Blob>((resolve) => {
             pdfDoc.getBlob((b: Blob) => resolve(b));
