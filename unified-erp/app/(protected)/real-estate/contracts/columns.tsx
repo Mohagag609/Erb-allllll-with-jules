@@ -38,7 +38,7 @@ export const columns: ColumnDef<ContractWithRelations>[] = [
   {
     accessorKey: "id",
     header: "رقم العقد",
-    cell: ({ row }) => <span className="font-mono">{row.getValue("id").substring(0, 8)}...</span>
+    cell: ({ row }) => <span className="font-mono">{(row.getValue("id") as string).substring(0, 8)}...</span>
   },
   {
     accessorKey: "client.name",
