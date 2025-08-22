@@ -3,33 +3,36 @@ import { getClients } from "@/services/real-estate/clients";
 import { getUnits } from "@/services/real-estate/units";
 import { getContracts } from "@/services/real-estate/contracts";
 import { Users, Building2, FileText, TrendingUp, DollarSign, Calendar } from "lucide-react";
+import { ensureDemoData } from "@/lib/demo";
 
 export default async function DashboardPage() {
   try {
-    // Fetch dashboard data
+    await ensureDemoData();
     const [clients, units, contracts] = await Promise.all([
       getClients().catch(() => []),
       getUnits().catch(() => []),
       getContracts().catch(() => [])
     ]);
 
-    // Calculate KPIs
     const totalClients = clients.length;
     const totalUnits = units.length;
     const totalContracts = contracts.length;
     const availableUnits = units.filter((unit: any) => unit.status === 'available').length;
     const totalRevenue = contracts.reduce((sum: number, contract: any) => sum + (contract.totalAmount || 0), 0);
 
+    const isEmpty = totalClients === 0 && totalUnits === 0 && totalContracts === 0;
+
     return (
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">لوحة التحكم الرئيسية</h1>
         
-        {/* Welcome Section */}
         <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
           <p className="text-lg">أهلاً بك في النظام</p>
+          {isEmpty && (
+            <p className="text-sm text-gray-600 mt-1">لا توجد بيانات بعد. ابدأ من صفحة &quot;إعداد البيانات&quot; أو أضف بياناتك.</p>
+          )}
         </div>
 
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -116,7 +119,6 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -156,7 +158,7 @@ export default async function DashboardPage() {
                         <FileText className="w-4 h-4 text-green-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">عقد رقم {contract.number}</p>
+                        <p className="text-sm font-medium">عقد رقم {contract.number || contract.id.substring(0,6)}</p>
                         <p className="text-xs text-gray-500">
                           {contract.totalAmount?.toLocaleString('ar-EG')} ج.م
                         </p>
