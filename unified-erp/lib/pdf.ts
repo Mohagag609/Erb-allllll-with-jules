@@ -5,11 +5,11 @@
  * The vfs_fonts.js file from pdfmake is also a prerequisite.
  */
 import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
 
 // This is the virtual file system for pdfmake.
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
 
 // Define Arabic fonts. The actual font files must be loaded into the VFS.
 // This is a configuration step that typically happens once in an application's setup.
