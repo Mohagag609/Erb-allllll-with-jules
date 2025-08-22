@@ -29,10 +29,6 @@ export default function ReportsPage() {
         return;
       }
 
-      let buffer: Buffer;
-      let fileName: string;
-      let mimeType: string;
-
       if (format === 'pdf') {
         const docDefinition = createInstallmentsReportDocDefinition(installments);
         // This is a workaround for server-side font loading. In a real app,
@@ -48,11 +44,11 @@ export default function ReportsPage() {
 
       } else { // excel
         const { columns, rows } = prepareInstallmentsReportExcel(installments);
-        buffer = await generateExcel(columns, rows, "تقرير الأقساط");
-        fileName = `Installments_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
-        mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        const buffer: ArrayBuffer = await generateExcel(columns, rows, "تقرير الأقساط");
+        const fileName = `Installments_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        const mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-        const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
+        const blob = new Blob([buffer], { type: mimeType });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = fileName;
