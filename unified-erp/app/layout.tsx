@@ -21,15 +21,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   await ensureDailyBackup();
-  const session = process.env.ENABLE_AUTH === 'false' ? null : await auth();
+  const enableAuth = process.env.ENABLE_AUTH === 'true';
+  const session = enableAuth ? await auth() : null;
 
   return (
     <html lang="ar" dir="rtl">
       <body className={inter.className}>
         <div className="flex min-h-screen">
-          {(process.env.ENABLE_AUTH === 'false' || session?.user) && <Sidebar />}
+          {(!enableAuth || session?.user) && <Sidebar />}
           <main className="flex-1 flex flex-col">
-            {(process.env.ENABLE_AUTH === 'false' || session?.user) && <Navbar />}
+            {(!enableAuth || session?.user) && <Navbar />}
             <div className="p-8">
               {children}
             </div>

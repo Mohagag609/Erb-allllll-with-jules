@@ -4,7 +4,7 @@ import { authConfig } from "./lib/auth.config";
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
-  if (process.env.ENABLE_AUTH === "false") {
+  if (process.env.ENABLE_AUTH !== "true") {
     return;
   }
 
@@ -14,7 +14,7 @@ export default auth((req) => {
   const isProtectedRoute = nextUrl.pathname.startsWith("/dashboard") || nextUrl.pathname.startsWith("/real-estate") || nextUrl.pathname.startsWith("/accounting") || nextUrl.pathname.startsWith("/projects") || nextUrl.pathname.startsWith("/settlements") || nextUrl.pathname.startsWith("/reports") || nextUrl.pathname.startsWith("/settings");
 
   if (isProtectedRoute && !isLoggedIn) {
-    return Response.redirect(new URL("/login", nextUrl));
+    return Response.redirect(new URL("/", nextUrl));
   }
 
   if (isLoggedIn && nextUrl.pathname.startsWith("/login")) {
