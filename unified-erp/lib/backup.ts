@@ -65,7 +65,7 @@ async function runLocalBackup() {
   }
 }
 
-async function runBackup() {
+export async function runBackup() {
     const provider = process.env.BACKUP_PROVIDER || 'local';
     console.log(`باستخدام موفر النسخ الاحتياطي: ${provider}`);
 
