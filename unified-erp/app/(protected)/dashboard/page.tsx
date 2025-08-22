@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getClients } from "@/services/real-estate/clients";
 import { getUnits } from "@/services/real-estate/units";
@@ -7,8 +6,6 @@ import { Users, Building2, FileText, TrendingUp, DollarSign, Calendar } from "lu
 
 export default async function DashboardPage() {
   try {
-    const session = await auth();
-
     // Fetch dashboard data
     const [clients, units, contracts] = await Promise.all([
       getClients().catch(() => []),
@@ -29,12 +26,7 @@ export default async function DashboardPage() {
         
         {/* Welcome Section */}
         <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-          <p className="text-lg">
-            أهلاً بك، <span className="font-semibold">{session?.user?.name ?? "المستخدم"}</span>
-          </p>
-          <p className="text-sm text-gray-600 mt-1">
-            صلاحياتك الحالية: <span className="font-medium">{session?.user?.role ?? "غير محدد"}</span>
-          </p>
+          <p className="text-lg">أهلاً بك في النظام</p>
         </div>
 
         {/* KPI Cards */}

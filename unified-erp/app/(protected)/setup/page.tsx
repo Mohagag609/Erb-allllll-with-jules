@@ -1,19 +1,11 @@
-import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSampleClient } from "@/services/real-estate/clients";
 import { createSampleUnit } from "@/services/real-estate/units";
 import { createSampleContract } from "@/services/real-estate/contracts";
-import { redirect } from "next/navigation";
 
 export default async function SetupPage() {
   try {
-    const session = await auth();
-    
-    if (!session?.user) {
-      redirect('/login');
-    }
-
     return (
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">إعداد البيانات التجريبية</h1>
