@@ -37,9 +37,15 @@ export function ClientForm({ onFormSubmit }: { onFormSubmit: () => void }) {
       }
     });
 
-    await createClient(formData);
-    reset();
-    onFormSubmit(); // To close the dialog
+    try {
+      await createClient(formData);
+      reset();
+      onFormSubmit(); // To close the dialog
+    } catch (error) {
+      console.error("Failed to create client:", error);
+      // In a real app, show a toast notification
+      alert((error as Error).message);
+    }
   };
 
   return (

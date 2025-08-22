@@ -29,16 +29,17 @@ export default function ReportsPage() {
         return;
       }
 
-      let buffer: Buffer;
-      let fileName: string;
-      let mimeType: string;
-
       if (format === 'pdf') {
         const docDefinition = createInstallmentsReportDocDefinition(installments);
-        // This is a workaround for server-side font loading. In a real app,
-        // you would need to load the font file into the vfs.
-        // For now, we rely on client-side generation which has the fonts.
-        const pdfDoc = require('pdfmake/build/pdfmake').createPdf(docDefinition);
+        
+        // Use dynamic import for pdfmake to avoid SSR issues
+        const pdfMake = await import('pdfmake/build/pdfmake');
+        const pdfFonts = await import('pdfmake/build/vfs_fonts');
+        
+        // Set up fonts
+        pdfMake.default.vfs = (pdfFonts as any).pdfMake.vfs;
+        
+        const pdfDoc = pdfMake.default.createPdf(docDefinition);
 
         const blob = await new Promise<Blob>((resolve) => {
             pdfDoc.getBlob((b: Blob) => resolve(b));
@@ -48,11 +49,11 @@ export default function ReportsPage() {
 
       } else { // excel
         const { columns, rows } = prepareInstallmentsReportExcel(installments);
-        buffer = await generateExcel(columns, rows, "تقرير الأقساط");
-        fileName = `Installments_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
-        mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        const buffer: ArrayBuffer = await generateExcel(columns, rows, "تقرير الأقساط");
+        const fileName = `Installments_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        const mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-        const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
+        const blob = new Blob([buffer], { type: mimeType });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = fileName;

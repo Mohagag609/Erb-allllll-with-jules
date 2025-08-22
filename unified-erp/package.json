@@ -12,10 +12,15 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "db:reset": "prisma migrate reset",
     "seed": "ts-node --compiler-options '{\\\"module\\\":\\\"commonjs\\\"}' prisma/seed.ts",
     "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
     "backup:run": "ts-node --compiler-options '{\\\"module\\\":\\\"commonjs\\\"}' lib/backup.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.2.0",
@@ -45,6 +50,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -62,6 +68,17 @@
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }

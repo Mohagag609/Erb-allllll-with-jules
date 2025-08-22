@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { PlanType, UnitStatus } from "@prisma/client";
+import { PlanType, UnitStatus, InstallmentStatus } from "@prisma/client";
 import dayjs from "dayjs";
 
 const ContractSchema = z.object({
@@ -63,7 +63,7 @@ export async function createContract(formData: FormData) {
   const installmentAmount = (totalAmount - downPayment) / months;
 
   try {
-    await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const contract = await tx.contract.create({
         data: {
           clientId,
@@ -93,7 +93,7 @@ export async function createContract(formData: FormData) {
           contractId: contract.id,
           amount: installmentAmount,
           dueDate: dueDate,
-          status: "PENDING",
+          status: InstallmentStatus.PENDING,
         });
       }
 
@@ -107,10 +107,13 @@ export async function createContract(formData: FormData) {
         where: { id: unitId },
         data: { status: UnitStatus.sold },
       });
+
+      return contract;
     });
 
     revalidatePath("/real-estate/contracts");
     revalidatePath("/real-estate/units");
+    return result;
   } catch (error) {
     console.error("Failed to create contract:", error);
     throw new Error("فشل في إنشاء العقد والأقساط.");

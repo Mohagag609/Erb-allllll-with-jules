@@ -4,17 +4,12 @@
  * We will assume 'Amiri-Regular.ttf' and 'Amiri-Bold.ttf' exist.
  * The vfs_fonts.js file from pdfmake is also a prerequisite.
  */
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
-
-// This is the virtual file system for pdfmake.
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 // Define Arabic fonts. The actual font files must be loaded into the VFS.
 // This is a configuration step that typically happens once in an application's setup.
 // For a server-side environment, you would load the font files from the filesystem.
-pdfMake.fonts = {
+const pdfFonts = {
   Amiri: {
     normal: 'Amiri-Regular.ttf',
     bold: 'Amiri-Bold.ttf',
@@ -37,10 +32,19 @@ pdfMake.fonts = {
 export async function generatePdf(docDefinition: TDocumentDefinitions): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const pdfDoc = pdfMake.createPdf(docDefinition);
-      pdfDoc.getBuffer((buffer) => {
-        resolve(buffer);
-      });
+      // Dynamic import to avoid SSR issues
+      import('pdfmake/build/pdfmake').then((pdfMake) => {
+        import('pdfmake/build/vfs_fonts').then((pdfFontsModule) => {
+          // Set up fonts
+          pdfMake.default.vfs = (pdfFontsModule as any).pdfMake.vfs;
+          pdfMake.default.fonts = pdfFonts;
+          
+          const pdfDoc = pdfMake.default.createPdf(docDefinition);
+          pdfDoc.getBuffer((buffer) => {
+            resolve(buffer);
+          });
+        }).catch(reject);
+      }).catch(reject);
     } catch (error) {
       console.error("Error generating PDF:", error);
       reject(error);
@@ -81,8 +85,12 @@ export function createInstallmentsReportDocDefinition(data: any[]): TDocumentDef
                 // RTL layout for the table
                 layout: {
                     hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 2 : 1,
-                    vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length) ? 2 : 1,
+                    vLineWidth: (i, node) => {
+                        if (!node.table.widths) return 1;
+                        return (i === 0 || i === node.table.widths.length) ? 2 : 1;
+                    },
                     // Bidi-ordering for columns - this is important for RTL
+                    // @ts-ignore - bidiLevel is a valid property but may be missing from older @types/pdfmake
                     bidiLevel: 1,
                 }
             }
