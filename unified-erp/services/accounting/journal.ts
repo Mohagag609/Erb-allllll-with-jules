@@ -13,7 +13,7 @@ const JournalLineInputSchema = z.object({
   message: "لا يمكن أن يحتوي السطر على مدين ودائن معًا.",
 });
 
-export const CreateJournalEntrySchema = z.object({
+const CreateJournalEntrySchema = z.object({
   date: z.coerce.date(),
   description: z.string().min(1, "الوصف مطلوب"),
   lines: z.array(JournalLineInputSchema).min(2, "يجب أن يحتوي القيد على سطرين على الأقل"),
