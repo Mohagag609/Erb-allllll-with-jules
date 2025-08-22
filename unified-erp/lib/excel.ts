@@ -5,9 +5,9 @@ import { Workbook } from 'exceljs';
  * @param columns An array of column headers.
  * @param data An array of data objects.
  * @param sheetName The name of the worksheet.
- * @returns A Promise that resolves with the Excel file buffer.
+ * @returns A Promise that resolves with the Excel file as an ArrayBuffer.
  */
-export async function generateExcel(columns: any[], data: any[], sheetName: string = 'Sheet 1'): Promise<Buffer> {
+export async function generateExcel(columns: any[], data: any[], sheetName: string = 'Sheet 1'): Promise<ArrayBuffer> {
   const workbook = new Workbook();
   const worksheet = workbook.addWorksheet(sheetName);
 
@@ -69,7 +69,7 @@ export async function generateExcel(columns: any[], data: any[], sheetName: stri
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  return buffer as Buffer;
+  return buffer;
 }
 
 /**
