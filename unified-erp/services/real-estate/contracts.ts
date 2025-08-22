@@ -3,18 +3,18 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { PlanType } from "@prisma/client";
 
-// Schema for creating/updating a contract
+// Schema for creating a contract aligned with Prisma
 const ContractSchema = z.object({
-  clientId: z.string().min(1, "العميل مطلوب"),
-  unitId: z.string().min(1, "الوحدة مطلوبة"),
-  number: z.string().min(1, "رقم العقد مطلوب"),
-  startDate: z.date(),
-  endDate: z.date(),
-  totalAmount: z.number().min(0, "إجمالي المبلغ يجب أن يكون موجب"),
-  downPayment: z.number().min(0, "الدفعة الأولى يجب أن تكون موجبة"),
-  monthlyPayment: z.number().min(0, "القسط الشهري يجب أن يكون موجب"),
-  status: z.enum(["draft", "active", "completed", "cancelled"]),
+  clientId: z.string().cuid("العميل مطلوب"),
+  unitId: z.string().cuid("الوحدة مطلوبة"),
+  startDate: z.coerce.date(),
+  totalAmount: z.coerce.number().positive("إجمالي المبلغ يجب أن يكون موجب"),
+  downPayment: z.coerce.number().min(0, "الدفعة الأولى يجب أن تكون موجبة"),
+  months: z.coerce.number().int().positive("عدد الأشهر غير صالح"),
+  planType: z.nativeEnum(PlanType),
+  notes: z.string().optional(),
 });
 
 export async function getContracts() {
@@ -36,54 +36,68 @@ export async function getContracts() {
 }
 
 export async function createContract(formData: FormData) {
-  const validatedFields = ContractSchema.safeParse({
-    ...Object.fromEntries(formData.entries()),
-    clientId: formData.get("clientId") as string,
-    unitId: formData.get("unitId") as string,
-    startDate: new Date(formData.get("startDate") as string),
-    endDate: new Date(formData.get("endDate") as string),
-    totalAmount: Number(formData.get("totalAmount")),
-    downPayment: Number(formData.get("downPayment")),
-    monthlyPayment: Number(formData.get("monthlyPayment")),
+  const validated = ContractSchema.safeParse({
+    clientId: formData.get("clientId"),
+    unitId: formData.get("unitId"),
+    startDate: formData.get("startDate"),
+    totalAmount: formData.get("totalAmount"),
+    downPayment: formData.get("downPayment"),
+    months: formData.get("months"),
+    planType: formData.get("planType"),
+    notes: formData.get("notes") ?? undefined,
   });
 
-  if (!validatedFields.success) {
-    throw new Error(`Validation Error: ${validatedFields.error.flatten().fieldErrors}`);
+  if (!validated.success) {
+    throw new Error(`Validation Error: ${JSON.stringify(validated.error.flatten().fieldErrors)}`);
   }
 
-  const { clientId, unitId, totalAmount, downPayment, monthlyPayment } = validatedFields.data;
-  const months = Math.ceil((totalAmount - downPayment) / monthlyPayment);
-  const installmentAmount = (totalAmount - downPayment) / months;
+  const { clientId, unitId, startDate, totalAmount, downPayment, months, planType, notes } = validated.data;
+
+  const principal = totalAmount - downPayment;
+  if (principal <= 0) throw new Error("المبلغ بعد الدفعة المقدمة يجب أن يكون أكبر من صفر");
+
+  const installmentAmount = Number((principal / months).toFixed(2));
 
   try {
     const result = await prisma.$transaction(async (tx: any) => {
       const contract = await tx.contract.create({
-        data: validatedFields.data,
+        data: {
+          clientId,
+          unitId,
+          startDate,
+          totalAmount,
+          downPayment,
+          months,
+          planType,
+          notes,
+        },
       });
 
-      // Create installments
-      const installments = [];
+      // Create installments with schedule based on planType
+      const installments: any[] = [];
+      const baseDate = new Date(startDate);
       for (let i = 1; i <= months; i++) {
-        const dueDate = new Date(validatedFields.data.startDate);
-        dueDate.setMonth(dueDate.getMonth() + i);
-
-        installments.push({
-          contractId: contract.id,
-          number: i,
-          amount: installmentAmount,
-          dueDate: dueDate,
-          status: "pending",
-        });
+        const dueDate = new Date(baseDate);
+        if (planType === "MONTHLY") {
+          dueDate.setMonth(dueDate.getMonth() + i);
+        } else if (planType === "QUARTERLY") {
+          dueDate.setMonth(dueDate.getMonth() + i * 3);
+        } else if (planType === "YEARLY") {
+          dueDate.setFullYear(dueDate.getFullYear() + i);
+        }
+        installments.push({ contractId: contract.id, amount: installmentAmount, dueDate });
       }
 
-      await tx.installment.createMany({
-        data: installments,
-      });
+      await tx.installment.createMany({ data: installments });
+
+      // Mark unit as sold
+      await tx.unit.update({ where: { id: unitId }, data: { status: "sold" } });
 
       return contract;
     });
 
     revalidatePath("/real-estate/contracts");
+    revalidatePath("/dashboard");
     return result;
   } catch (error) {
     console.error("Failed to create contract:", error);
@@ -95,57 +109,26 @@ export async function createContract(formData: FormData) {
 export async function createSampleContract(contractData: {
   clientId: string;
   unitId: string;
-  number: string;
+  number?: string; // ignored now; schema uses unique unit only
   startDate: Date;
-  endDate: Date;
+  endDate?: Date; // ignored
   totalAmount: number;
   downPayment: number;
-  monthlyPayment: number;
-  status: "draft" | "active" | "completed" | "cancelled";
+  monthlyPayment?: number; // ignored
+  status?: "draft" | "active" | "completed" | "cancelled"; // ignored
 }) {
-  const validatedFields = ContractSchema.safeParse(contractData);
+  // Default sample to monthly over 12 months
+  const months = 12;
+  const planType: PlanType = "MONTHLY";
 
-  if (!validatedFields.success) {
-    throw new Error(`Validation Error: ${validatedFields.error.flatten().fieldErrors}`);
-  }
+  const form = new FormData();
+  form.append("clientId", contractData.clientId);
+  form.append("unitId", contractData.unitId);
+  form.append("startDate", contractData.startDate.toISOString());
+  form.append("totalAmount", String(contractData.totalAmount));
+  form.append("downPayment", String(contractData.downPayment));
+  form.append("months", String(months));
+  form.append("planType", planType);
 
-  const { clientId, unitId, totalAmount, downPayment, monthlyPayment } = validatedFields.data;
-  const months = Math.ceil((totalAmount - downPayment) / monthlyPayment);
-  const installmentAmount = (totalAmount - downPayment) / months;
-
-  try {
-    const result = await prisma.$transaction(async (tx: any) => {
-      const contract = await tx.contract.create({
-        data: validatedFields.data,
-      });
-
-      // Create installments
-      const installments = [];
-      for (let i = 1; i <= months; i++) {
-        const dueDate = new Date(validatedFields.data.startDate);
-        dueDate.setMonth(dueDate.getMonth() + i);
-
-        installments.push({
-          contractId: contract.id,
-          number: i,
-          amount: installmentAmount,
-          dueDate: dueDate,
-          status: "pending",
-        });
-      }
-
-      await tx.installment.createMany({
-        data: installments,
-      });
-
-      return contract;
-    });
-
-    revalidatePath("/real-estate/contracts");
-    revalidatePath("/dashboard");
-    return result;
-  } catch (error) {
-    console.error("Failed to create sample contract:", error);
-    throw new Error("فشل في إنشاء العقد التجريبي.");
-  }
+  return createContract(form);
 }

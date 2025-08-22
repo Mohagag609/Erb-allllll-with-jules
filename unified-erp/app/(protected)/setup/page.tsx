@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSampleClient } from "@/services/real-estate/clients";
 import { createSampleUnit } from "@/services/real-estate/units";
 import { createSampleContract } from "@/services/real-estate/contracts";
+import { UnitStatus } from "@prisma/client";
 
 export default async function SetupPage() {
   try {
@@ -56,16 +57,16 @@ export default async function SetupPage() {
                 'use server';
                 try {
                   const sampleUnits = [
-                    { number: "A101", type: "شقة", area: 120, price: 500000, status: "available" as const, location: "برج 1" },
-                    { number: "A102", type: "شقة", area: 150, price: 650000, status: "available" as const, location: "برج 1" },
-                    { number: "A201", type: "شقة", area: 120, price: 520000, status: "available" as const, location: "برج 1" },
-                    { number: "A202", type: "شقة", area: 150, price: 670000, status: "available" as const, location: "برج 1" },
-                    { number: "B101", type: "دوبلكس", area: 200, price: 800000, status: "available" as const, location: "برج 2" },
-                    { number: "B102", type: "دوبلكس", area: 250, price: 1000000, status: "available" as const, location: "برج 2" },
-                    { number: "C101", type: "فيلا", area: 300, price: 1500000, status: "available" as const, location: "برج 3" },
-                    { number: "C102", type: "فيلا", area: 350, price: 1800000, status: "available" as const, location: "برج 3" },
-                    { number: "D101", type: "مكتب", area: 80, price: 400000, status: "available" as const, location: "برج 4" },
-                    { number: "D102", type: "مكتب", area: 100, price: 500000, status: "available" as const, location: "برج 4" }
+                    { code: "A101", type: "شقة", area: 120, price: 500000, status: UnitStatus.available },
+                    { code: "A102", type: "شقة", area: 150, price: 650000, status: UnitStatus.available },
+                    { code: "A201", type: "شقة", area: 120, price: 520000, status: UnitStatus.available },
+                    { code: "A202", type: "شقة", area: 150, price: 670000, status: UnitStatus.available },
+                    { code: "B101", type: "دوبلكس", area: 200, price: 800000, status: UnitStatus.available },
+                    { code: "B102", type: "دوبلكس", area: 250, price: 1000000, status: UnitStatus.available },
+                    { code: "C101", type: "فيلا", area: 300, price: 1500000, status: UnitStatus.available },
+                    { code: "C102", type: "فيلا", area: 350, price: 1800000, status: UnitStatus.available },
+                    { code: "D101", type: "مكتب", area: 80, price: 400000, status: UnitStatus.available },
+                    { code: "D102", type: "مكتب", area: 100, price: 500000, status: UnitStatus.available }
                   ];
 
                   for (const unit of sampleUnits) {
