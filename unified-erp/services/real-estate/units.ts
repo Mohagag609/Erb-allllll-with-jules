@@ -3,21 +3,16 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { UnitStatus } from "@prisma/client";
 
+// Schema for creating/updating a unit
 const UnitSchema = z.object({
-  code: z.string().min(1, "الكود مطلوب"),
-  type: z.string().min(2, "النوع مطلوب"),
-  price: z.coerce.number().positive("يجب أن يكون السعر رقمًا موجبًا"),
-  status: z.nativeEnum(UnitStatus),
-  area: z.coerce.number().optional(),
-  downPayment: z.coerce.number().optional(),
-  reservationFees: z.coerce.number().optional(),
-  commission: z.coerce.number().optional(),
-  maintenance: z.coerce.number().optional(),
-  garageShare: z.coerce.number().optional(),
+  number: z.string().min(1, "رقم الوحدة مطلوب"),
+  type: z.string().min(1, "نوع الوحدة مطلوب"),
+  area: z.number().min(1, "المساحة مطلوبة"),
+  price: z.number().min(0, "السعر يجب أن يكون موجب"),
+  status: z.enum(["available", "sold", "reserved"]),
+  location: z.string().optional(),
   description: z.string().optional(),
-  projectId: z.string().optional(),
 });
 
 export async function getUnits() {
@@ -26,9 +21,6 @@ export async function getUnits() {
       orderBy: {
         createdAt: "desc",
       },
-      include: {
-        project: true, // Include project data if available
-      }
     });
     return units;
   } catch (error) {
@@ -38,24 +30,52 @@ export async function getUnits() {
 }
 
 export async function createUnit(formData: FormData) {
-  const validatedFields = UnitSchema.safeParse(Object.fromEntries(formData.entries()));
+  const validatedFields = UnitSchema.safeParse({
+    ...Object.fromEntries(formData.entries()),
+    area: Number(formData.get("area")),
+    price: Number(formData.get("price")),
+  });
 
   if (!validatedFields.success) {
-    console.error("Validation Error:", validatedFields.error.flatten().fieldErrors);
-    throw new Error(`خطأ في التحقق من البيانات`);
+    throw new Error(`Validation Error: ${validatedFields.error.flatten().fieldErrors}`);
   }
 
   try {
-    const data = validatedFields.data;
     const unit = await prisma.unit.create({
-      data: {
-        ...data,
-      },
+      data: validatedFields.data,
     });
     revalidatePath("/real-estate/units");
     return unit;
   } catch (error) {
     console.error("Failed to create unit:", error);
     throw new Error("فشل في إنشاء الوحدة.");
+  }
+}
+
+// Function for creating sample units (accepts object instead of FormData)
+export async function createSampleUnit(unitData: {
+  number: string;
+  type: string;
+  area: number;
+  price: number;
+  status: "available" | "sold" | "reserved";
+  location: string;
+}) {
+  const validatedFields = UnitSchema.safeParse(unitData);
+
+  if (!validatedFields.success) {
+    throw new Error(`Validation Error: ${validatedFields.error.flatten().fieldErrors}`);
+  }
+
+  try {
+    const unit = await prisma.unit.create({
+      data: validatedFields.data,
+    });
+    revalidatePath("/real-estate/units");
+    revalidatePath("/dashboard");
+    return unit;
+  } catch (error) {
+    console.error("Failed to create sample unit:", error);
+    throw new Error("فشل في إنشاء الوحدة التجريبية.");
   }
 }
