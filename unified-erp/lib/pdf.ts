@@ -86,6 +86,7 @@ export function createInstallmentsReportDocDefinition(data: any[]): TDocumentDef
                         return (i === 0 || i === node.table.widths.length) ? 2 : 1;
                     },
                     // Bidi-ordering for columns - this is important for RTL
+                    // @ts-ignore - bidiLevel is a valid property but may be missing from older @types/pdfmake
                     bidiLevel: 1,
                 }
             }
