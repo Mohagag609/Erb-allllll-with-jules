@@ -59,6 +59,7 @@ const navLinks: NavItem[] = [
     ]
   },
   { type: 'link', href: "/reports", label: "التقارير", icon: BarChart2 },
+  { type: 'link', href: "/setup", label: "إعداد البيانات", icon: Settings },
   { type: 'link', href: "/settings", label: "الإعدادات", icon: Settings },
 ];
 
