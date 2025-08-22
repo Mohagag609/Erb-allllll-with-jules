@@ -202,6 +202,7 @@ model Project {
   projectPartners ProjectPartner[]
   cashboxes       Cashbox[]
   journalEntries  JournalEntry[]
+  journalLines    JournalLine[]
   invoices        Invoice[]
   phases          Phase[]
   materialMoves   MaterialMove[]
