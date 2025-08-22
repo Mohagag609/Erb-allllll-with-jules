@@ -1,46 +1,16 @@
-import { auth, signOut } from "@/lib/auth";
-import { Button } from "./ui/button";
-import { LogOut } from "lucide-react";
+import { Input } from "./ui/input";
+import { Search } from "lucide-react";
 
-export async function Navbar() {
-  try {
-    const session = await auth();
-
-    return (
-      <header className="flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div>
-          {/* Search bar can go here */}
-        </div>
-        <div className="flex items-center space-x-4 space-x-reverse">
-          <span>{session?.user?.name || "المستخدم"}</span>
-          <form
-            action={async () => {
-              "use server";
-              try {
-                await signOut();
-              } catch (error) {
-                console.error("Failed to sign out:", error);
-              }
-            }}
-          >
-            <Button type="submit" variant="ghost" size="icon">
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </form>
-        </div>
-      </header>
-    );
-  } catch (error) {
-    console.error("Failed to load navbar:", error);
-    return (
-      <header className="flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div>
-          {/* Search bar can go here */}
-        </div>
-        <div className="flex items-center space-x-4 space-x-reverse">
-          <span>خطأ في التحميل</span>
-        </div>
-      </header>
-    );
-  }
+export function Navbar() {
+  return (
+    <header className="flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900/50 border-b dark:border-gray-700/50">
+      <div className="relative">
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input placeholder="بحث عام..." className="w-64 md:w-96 pr-10" />
+      </div>
+      <div className="flex items-center space-x-4 space-x-reverse">
+        {/* Other navbar items like notifications or theme toggle can go here */}
+      </div>
+    </header>
+  );
 }

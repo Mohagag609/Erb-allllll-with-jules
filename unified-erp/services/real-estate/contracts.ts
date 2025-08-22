@@ -63,7 +63,7 @@ export async function createContract(formData: FormData) {
   const installmentAmount = (totalAmount - downPayment) / months;
 
   try {
-    const result = await prisma.$transaction(async (tx: any) => {
+    await prisma.$transaction(async (tx) => {
       const contract = await tx.contract.create({
         data: {
           clientId,
@@ -107,15 +107,64 @@ export async function createContract(formData: FormData) {
         where: { id: unitId },
         data: { status: UnitStatus.sold },
       });
-
-      return contract;
     });
 
     revalidatePath("/real-estate/contracts");
     revalidatePath("/real-estate/units");
-    return result;
   } catch (error) {
     console.error("Failed to create contract:", error);
     throw new Error("فشل في إنشاء العقد والأقساط.");
+  }
+}
+
+// updateContract would be more complex, as it might require regenerating installments.
+// This is a simplified version for now.
+export async function updateContract(contractId: string, formData: FormData) {
+  // Add Zod validation for update schema
+  const notes = formData.get("notes") as string;
+  try {
+    await prisma.contract.update({
+      where: { id: contractId },
+      data: { notes },
+    });
+    revalidatePath("/real-estate/contracts");
+  } catch (error) {
+    console.error(`Failed to update contract ${contractId}:`, error);
+    throw new Error("فشل في تحديث العقد.");
+  }
+}
+
+export async function deleteContract(contractId: string) {
+  try {
+    // This must be a transaction to ensure data integrity
+    await prisma.$transaction(async (tx) => {
+      const contract = await tx.contract.findUnique({
+        where: { id: contractId },
+        select: { unitId: true }
+      });
+      if (!contract) throw new Error("العقد غير موجود.");
+
+      // 1. Delete associated installments
+      await tx.installment.deleteMany({
+        where: { contractId: contractId },
+      });
+
+      // 2. Delete the contract itself
+      await tx.contract.delete({
+        where: { id: contractId },
+      });
+
+      // 3. Set the unit back to 'available'
+      await tx.unit.update({
+        where: { id: contract.unitId },
+        data: { status: UnitStatus.available },
+      });
+    });
+
+    revalidatePath("/real-estate/contracts");
+    revalidatePath("/real-estate/units");
+  } catch (error) {
+    console.error(`Failed to delete contract ${contractId}:`, error);
+    throw new Error("فشل في حذف العقد.");
   }
 }

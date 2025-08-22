@@ -66,7 +66,20 @@ export const columns: ColumnDef<ContractWithRelations>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const contract = row.original
+      const contract = row.original;
+
+      const handleDelete = async () => {
+        if (confirm(`هل أنت متأكد من رغبتك في حذف العقد رقم ${contract.id.substring(0,8)}؟ سيتم حذف جميع الأقساط المرتبطة به.`)) {
+          try {
+            await deleteContract(contract.id);
+            toast({ title: "نجاح", description: "تم حذف العقد بنجاح." });
+            // The page will need to reload or refetch data.
+            window.location.reload();
+          } catch (error) {
+            toast({ variant: "destructive", title: "خطأ", description: (error as Error).message });
+          }
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -78,13 +91,22 @@ export const columns: ColumnDef<ContractWithRelations>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="font-sans">
             <DropdownMenuLabel>إجراءات</DropdownMenuLabel>
-            <DropdownMenuItem>عرض التفاصيل</DropdownMenuItem>
-            <DropdownMenuItem>طباعة العقد</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert(`تعديل العقد ${contract.id}`)}>
+              تعديل العقد
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert('سيتم تنفيذ طباعة العقد هنا')}>
+              طباعة العقد
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500 focus:!text-red-500">فسخ العقد</DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-red-500 focus:!text-red-500"
+              onClick={handleDelete}
+            >
+              حذف العقد
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
 ]

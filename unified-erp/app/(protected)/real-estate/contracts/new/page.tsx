@@ -32,23 +32,13 @@ export default function NewContractPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [availableUnits, setAvailableUnits] = useState<Unit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        const [allClients, allUnits] = await Promise.all([
-          getClients(),
-          getUnits()
-        ]);
-        setClients(allClients);
-        setAvailableUnits(allUnits.filter((u: any) => u.status === UnitStatus.available));
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        // In a real app, show a toast notification
-      } finally {
-        setIsLoading(false);
-      }
+      const allClients = await getClients();
+      const allUnits = await getUnits();
+      setClients(allClients);
+      setAvailableUnits(allUnits.filter(u => u.status === UnitStatus.available));
     }
     fetchData();
   }, []);
@@ -75,10 +65,6 @@ export default function NewContractPage() {
       alert((error as Error).message);
     }
   };
-
-  if (isLoading) {
-    return <div className="container mx-auto py-10">جاري التحميل...</div>;
-  }
 
   return (
     <Card className="max-w-4xl mx-auto">

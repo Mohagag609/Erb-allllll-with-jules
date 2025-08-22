@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUnits } from "@/services/real-estate/units";
-import { columns } from "./columns";
+import { getInvoices } from "@/services/accounting/invoices";
+import { columns, InvoiceWithRelations } from "./columns";
 import { DataTable } from "@/components/datatable/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +12,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UnitForm } from "@/components/forms/unit-form";
-import { Unit } from "@prisma/client";
+import { InvoiceForm } from "@/components/forms/invoice-form";
 
-export default function UnitsPage() {
-  const [data, setData] = useState<Unit[]>([]);
+export default function InvoicesPage() {
+  const [data, setData] = useState<InvoiceWithRelations[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false);
 
   const fetchData = async () => {
-    const units = await getUnits();
-    setData(units);
+    const invoices = await getInvoices();
+    setData(invoices as InvoiceWithRelations[]);
   };
 
   useEffect(() => {
@@ -29,31 +28,31 @@ export default function UnitsPage() {
   }, []);
 
   const handleFormSubmit = () => {
-    fetchData(); // Refetch data after submission
+    fetchData();
     setDialogOpen(false);
   };
 
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">إدارة الوحدات العقارية</h1>
+        <h1 className="text-3xl font-bold">إدارة الفواتير</h1>
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>إضافة وحدة جديدة</Button>
+            <Button>إنشاء فاتورة جديدة</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[625px]">
             <DialogHeader>
-              <DialogTitle>إضافة وحدة عقارية جديدة</DialogTitle>
+              <DialogTitle>إنشاء فاتورة جديدة (مسودة)</DialogTitle>
             </DialogHeader>
-            <UnitForm onFormSubmit={handleFormSubmit} />
+            <InvoiceForm onFormSubmit={handleFormSubmit} />
           </DialogContent>
         </Dialog>
       </div>
       <DataTable
         columns={columns}
         data={data}
-        filterColumn="code"
-        filterPlaceholder="فلترة بالكود..."
+        filterColumn="number"
+        filterPlaceholder="فلترة برقم الفاتورة..."
       />
     </div>
   );

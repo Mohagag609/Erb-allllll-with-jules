@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUnits } from "@/services/real-estate/units";
-import { columns } from "./columns";
+import { getVouchers } from "@/services/accounting/vouchers";
+import { columns, VoucherWithRelations } from "./columns";
 import { DataTable } from "@/components/datatable/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +12,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UnitForm } from "@/components/forms/unit-form";
-import { Unit } from "@prisma/client";
+import { VoucherForm } from "@/components/forms/voucher-form";
 
-export default function UnitsPage() {
-  const [data, setData] = useState<Unit[]>([]);
+export default function VouchersPage() {
+  const [data, setData] = useState<VoucherWithRelations[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false);
 
   const fetchData = async () => {
-    const units = await getUnits();
-    setData(units);
+    const vouchers = await getVouchers();
+    setData(vouchers as VoucherWithRelations[]);
   };
 
   useEffect(() => {
@@ -29,31 +28,31 @@ export default function UnitsPage() {
   }, []);
 
   const handleFormSubmit = () => {
-    fetchData(); // Refetch data after submission
+    fetchData();
     setDialogOpen(false);
   };
 
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">إدارة الوحدات العقارية</h1>
+        <h1 className="text-3xl font-bold">سندات القبض والصرف</h1>
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>إضافة وحدة جديدة</Button>
+            <Button>إنشاء سند جديد</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[625px]">
             <DialogHeader>
-              <DialogTitle>إضافة وحدة عقارية جديدة</DialogTitle>
+              <DialogTitle>إنشاء سند جديد</DialogTitle>
             </DialogHeader>
-            <UnitForm onFormSubmit={handleFormSubmit} />
+            <VoucherForm onFormSubmit={handleFormSubmit} />
           </DialogContent>
         </Dialog>
       </div>
       <DataTable
         columns={columns}
         data={data}
-        filterColumn="code"
-        filterPlaceholder="فلترة بالكود..."
+        filterColumn="note"
+        filterPlaceholder="فلترة بالبيان..."
       />
     </div>
   );

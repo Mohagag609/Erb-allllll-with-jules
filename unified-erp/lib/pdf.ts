@@ -4,12 +4,17 @@
  * We will assume 'Amiri-Regular.ttf' and 'Amiri-Bold.ttf' exist.
  * The vfs_fonts.js file from pdfmake is also a prerequisite.
  */
+import pdfMake from "pdfmake/build/pdfmake";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
+
+// This is the virtual file system for pdfmake.
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
 
 // Define Arabic fonts. The actual font files must be loaded into the VFS.
 // This is a configuration step that typically happens once in an application's setup.
 // For a server-side environment, you would load the font files from the filesystem.
-const pdfFonts = {
+pdfMake.fonts = {
   Amiri: {
     normal: 'Amiri-Regular.ttf',
     bold: 'Amiri-Bold.ttf',
@@ -32,19 +37,10 @@ const pdfFonts = {
 export async function generatePdf(docDefinition: TDocumentDefinitions): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      // Dynamic import to avoid SSR issues
-      import('pdfmake/build/pdfmake').then((pdfMake) => {
-        import('pdfmake/build/vfs_fonts').then((pdfFontsModule) => {
-          // Set up fonts
-          pdfMake.default.vfs = (pdfFontsModule as any).pdfMake.vfs;
-          pdfMake.default.fonts = pdfFonts;
-          
-          const pdfDoc = pdfMake.default.createPdf(docDefinition);
-          pdfDoc.getBuffer((buffer) => {
-            resolve(buffer);
-          });
-        }).catch(reject);
-      }).catch(reject);
+      const pdfDoc = pdfMake.createPdf(docDefinition);
+      pdfDoc.getBuffer((buffer) => {
+        resolve(buffer);
+      });
     } catch (error) {
       console.error("Error generating PDF:", error);
       reject(error);

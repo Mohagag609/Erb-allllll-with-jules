@@ -72,16 +72,16 @@ export function Sidebar() {
       </div>
       <nav className="space-y-4">
         {navLinks.map((item, index) => (
-          <div key={`nav-item-${index}`}>
+          <div key={index}>
             {item.type === 'section' ? (
               <>
                 <h3 className="px-4 mt-4 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   {item.title}
                 </h3>
                 <div className="space-y-1">
-                  {item.links.map((link, linkIndex) => (
+                  {item.links.map((link) => (
                     <Link
-                      key={`${item.title}-${linkIndex}`}
+                      key={link.href}
                       href={link.href}
                       className={cn(
                         "flex items-center px-4 py-2 text-sm font-medium rounded-md",
@@ -98,7 +98,7 @@ export function Sidebar() {
               </>
             ) : (
                 <Link
-                    key={`link-${index}`}
+                    key={item.href}
                     href={item.href}
                     className={cn(
                     "flex items-center px-4 py-2 text-sm font-medium rounded-md",

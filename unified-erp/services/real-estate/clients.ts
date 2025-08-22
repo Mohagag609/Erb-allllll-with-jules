@@ -36,11 +36,10 @@ export async function createClient(formData: FormData) {
   }
 
   try {
-    const client = await prisma.client.create({
+    await prisma.client.create({
       data: validatedFields.data,
     });
     revalidatePath("/real-estate/clients"); // Refresh the data on the clients page
-    return client;
   } catch (error) {
     console.error("Failed to create client:", error);
     throw new Error("فشل في إنشاء العميل.");
