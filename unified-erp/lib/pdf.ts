@@ -81,7 +81,10 @@ export function createInstallmentsReportDocDefinition(data: any[]): TDocumentDef
                 // RTL layout for the table
                 layout: {
                     hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 2 : 1,
-                    vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length) ? 2 : 1,
+                    vLineWidth: (i, node) => {
+                        if (!node.table.widths) return 1;
+                        return (i === 0 || i === node.table.widths.length) ? 2 : 1;
+                    },
                     // Bidi-ordering for columns - this is important for RTL
                     bidiLevel: 1,
                 }
