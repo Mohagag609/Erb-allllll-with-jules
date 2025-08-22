@@ -83,6 +83,21 @@ export async function runBackup() {
     }
 }
 
+export async function ensureDailyBackup() {
+  try {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const last = await prisma.backup.findFirst({
+      orderBy: { runAt: 'desc' },
+    });
+    if (!last || (last.runAt < today)) {
+      await runBackup();
+    }
+  } catch (e) {
+    console.warn('ensureDailyBackup skipped or failed:', e);
+  }
+}
+
 // This allows the script to be run directly from the command line
 if (require.main === module) {
   runBackup()

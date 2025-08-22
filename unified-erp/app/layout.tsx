@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { Navbar } from "@/components/navbar";
 import { auth } from "@/lib/auth";
+import { ensureDailyBackup } from "@/lib/backup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await ensureDailyBackup();
   const session = process.env.ENABLE_AUTH === 'false' ? null : await auth();
 
   return (
